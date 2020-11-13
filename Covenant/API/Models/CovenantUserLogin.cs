@@ -6,6 +6,7 @@
 
 namespace Covenant.API.Models
 {
+    using Microsoft.Rest;
     using Newtonsoft.Json;
     using System.Linq;
 
@@ -22,8 +23,9 @@ namespace Covenant.API.Models
         /// <summary>
         /// Initializes a new instance of the CovenantUserLogin class.
         /// </summary>
-        public CovenantUserLogin(string userName = default(string), string password = default(string))
+        public CovenantUserLogin(string userName, string password, string id = default(string))
         {
+            Id = id;
             UserName = userName;
             Password = password;
             CustomInit();
@@ -36,6 +38,11 @@ namespace Covenant.API.Models
 
         /// <summary>
         /// </summary>
+        [JsonProperty(PropertyName = "id")]
+        public string Id { get; set; }
+
+        /// <summary>
+        /// </summary>
         [JsonProperty(PropertyName = "userName")]
         public string UserName { get; set; }
 
@@ -44,5 +51,22 @@ namespace Covenant.API.Models
         [JsonProperty(PropertyName = "password")]
         public string Password { get; set; }
 
+        /// <summary>
+        /// Validate the object.
+        /// </summary>
+        /// <exception cref="ValidationException">
+        /// Thrown if validation fails
+        /// </exception>
+        public virtual void Validate()
+        {
+            if (UserName == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "UserName");
+            }
+            if (Password == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "Password");
+            }
+        }
     }
 }

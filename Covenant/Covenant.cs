@@ -8,7 +8,9 @@ using System.Net;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Collections.Generic;
+using System.Collections.Concurrent;
+using System.Runtime.InteropServices;
+using System.Security.Principal;
 using System.Security.Authentication;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
@@ -16,14 +18,15 @@ using System.Security.Cryptography.X509Certificates;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
 
-using McMaster.Extensions.CommandLineUtils;
 using NLog.Web;
 using NLog.Config;
 using NLog.Targets;
+using McMaster.Extensions.CommandLineUtils;
 
 using Covenant.Models;
 using Covenant.Core;
@@ -39,17 +42,22 @@ namespace Covenant
             app.HelpOption("-? | -h | --help");
             var UserNameOption = app.Option(
                 "-u | --username <USERNAME>",
-                "The UserName to login to the Covenant API.",
+                "The initial user UserName to create on launch. (env: COVENANT_USERNAME)",
                 CommandOptionType.SingleValue
             );
             var PasswordOption = app.Option(
                 "-p | --password <PASSWORD>",
-                "The Password to login to the Covenant API.",
+                "The initial user Password to create on launch. (env: COVENANT_PASSWORD)",
                 CommandOptionType.SingleValue
             );
             var ComputerNameOption = app.Option(
                 "-c | --computername <COMPUTERNAME>",
-                "The ComputerName (IPAddress or Hostname) to bind the Covenant API to.",
+                "The ComputerName (IPAddress or Hostname) to bind Covenant to. (env: COVENANT_COMPUTER_NAME)",
+                CommandOptionType.SingleValue
+            );
+            var AdminPortOption = app.Option(
+                "-a | --adminport <PORT>",
+                "The Port number to bind Covenant to. (env: COVENANT_PORT)",
                 CommandOptionType.SingleValue
             );
 
@@ -64,21 +72,28 @@ namespace Covenant
                     return -1;
                 }
 
-                string username = UserNameOption.Value();
-                string password = PasswordOption.Value();
-                if (!UserNameOption.HasValue())
-                {
-                    Console.Write("Username: ");
-                    username = Console.ReadLine();
-                }
-                if (!PasswordOption.HasValue())
+                string username = UserNameOption.HasValue() ? UserNameOption.Value() : Environment.GetEnvironmentVariable("COVENANT_USERNAME");
+                string password = PasswordOption.HasValue() ? PasswordOption.Value() : Environment.GetEnvironmentVariable("COVENANT_PASSWORD");
+                if (!string.IsNullOrEmpty(username) && string.IsNullOrEmpty(password))
                 {
                     Console.Write("Password: ");
                     password = GetPassword();
                     Console.WriteLine();
                 }
 
-                string CovenantBindUrl = ComputerNameOption.HasValue() ? ComputerNameOption.Value() : "0.0.0.0";
+                string CovenantBindUrl = ComputerNameOption.HasValue() ? ComputerNameOption.Value() : Environment.GetEnvironmentVariable("COVENANT_COMPUTER_NAME"); ;
+                if (string.IsNullOrEmpty(CovenantBindUrl))
+                {
+                    CovenantBindUrl = "0.0.0.0";
+                }
+
+                int CovenantPort = Common.CovenantDefaultAdminPort;
+                string sPort = AdminPortOption.HasValue() ? AdminPortOption.Value() : Environment.GetEnvironmentVariable("COVENANT_PORT");
+                if (!string.IsNullOrEmpty(sPort) && !int.TryParse(sPort, out CovenantPort))
+                {
+                    CovenantPort = Common.CovenantDefaultAdminPort;
+                }
+
                 IPAddress address = null;
                 try
                 {
@@ -88,38 +103,53 @@ namespace Covenant
                 {
                     address = Dns.GetHostAddresses(CovenantBindUrl).FirstOrDefault();
                 }
-                IPEndPoint CovenantEndpoint = new IPEndPoint(address, Common.CovenantHTTPSPort);
-                string CovenantUri = (CovenantBindUrl == "0.0.0.0" ? "https://127.0.0.1:" + Common.CovenantHTTPSPort : "https://" + CovenantEndpoint);
-                var host = BuildWebHost(
-                    CovenantEndpoint,
-                    CovenantUri,
-                    username,
-                    password
-                );
+                IPEndPoint CovenantEndpoint = new IPEndPoint(address, CovenantPort);
+                string CovenantUri = CovenantBindUrl == "0.0.0.0" ? "https://127.0.0.1:" + CovenantPort : "https://" + CovenantEndpoint;
+                var host = BuildHost(CovenantEndpoint, CovenantUri);
                 using (var scope = host.Services.CreateScope())
                 {
                     var services = scope.ServiceProvider;
                     var context = services.GetRequiredService<CovenantContext>();
+                    var service = services.GetRequiredService<ICovenantService>();
                     var userManager = services.GetRequiredService<UserManager<CovenantUser>>();
                     var signInManager = services.GetRequiredService<SignInManager<CovenantUser>>();
-                    context.Database.EnsureCreated();
-                    if (context.Users.Any())
-                    {
-                        CovenantUser user = context.Users.FirstOrDefault(CU => CU.UserName == username);
-                        Task<bool> task = userManager.CheckPasswordAsync(user, password);
-                        task.Wait();
-                        if (!task.Result)
-                        {
-                            Console.Error.WriteLine($"Error: Incorrect password for user: {username}");
-                            return -2;
-                        }
-                    }
                     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
                     var configuration = services.GetRequiredService<IConfiguration>();
-					var cancellationTokens = services.GetRequiredService<Dictionary<int, CancellationTokenSource>>();
-                    DbInitializer.Initialize(context, userManager, roleManager, configuration, cancellationTokens);
+                    configuration["CovenantPort"] = CovenantPort.ToString();
+                    var listenerTokenSources = services.GetRequiredService<ConcurrentDictionary<int, CancellationTokenSource>>();
+                    context.Database.EnsureCreated();
+                    DbInitializer.Initialize(service, context, roleManager, listenerTokenSources).Wait();
+                    CovenantUser serviceUser = new CovenantUser { UserName = "ServiceUser" };
+                    if (!context.Users.Any())
+                    {
+                        string serviceUserPassword = Utilities.CreateSecretPassword() + "A";
+                        userManager.CreateAsync(serviceUser, serviceUserPassword).Wait();
+                        userManager.AddToRoleAsync(serviceUser, "ServiceUser").Wait();
+                        if (!string.IsNullOrEmpty(username) && !string.IsNullOrEmpty(password))
+                        {
+                            CovenantUser user = new CovenantUser { UserName = username };
+                            Task<IdentityResult> task = userManager.CreateAsync(user, password);
+                            task.Wait();
+                            IdentityResult userResult = task.Result;
+                            if (userResult.Succeeded)
+                            {
+                                userManager.AddToRoleAsync(user, "User").Wait();
+                                userManager.AddToRoleAsync(user, "Administrator").Wait();
+                            }
+                            else
+                            {
+                                Console.Error.WriteLine($"Error creating user: {user.UserName}");
+                                return -1;
+                            }
+                        }
+                    }
+                    configuration["ServiceUserToken"] = Utilities.GenerateJwtToken(
+                        serviceUser.UserName, serviceUser.Id, new string[] { "ServiceUser" },
+                        configuration["JwtKey"], configuration["JwtIssuer"],
+                        configuration["JwtAudience"], configuration["JwtExpireDays"]
+                    );
                 }
-                
+
                 LoggingConfiguration loggingConfig = new LoggingConfiguration();
                 var consoleTarget = new ColoredConsoleTarget();
                 var fileTarget = new FileTarget();
@@ -135,6 +165,11 @@ namespace Covenant
                 try
                 {
                     logger.Debug("Starting Covenant API");
+                    if (!IsElevated())
+                    {
+                        Console.Error.WriteLine("WARNING: Running Covenant non-elevated. You may not have permission to start Listeners on low-numbered ports. Consider running Covenant elevated.");
+                    }
+                    Console.WriteLine($"Covenant has started! Navigate to {CovenantUri} in a browser");
                     host.Run();
                 }
                 catch (Exception ex)
@@ -151,9 +186,11 @@ namespace Covenant
             app.Execute(args);
         }
 
-        public static IWebHost BuildWebHost(IPEndPoint CovenantEndpoint, string CovenantUri, string CovenantUsername, string CovenantPassword) =>
-            new WebHostBuilder()
-                .UseKestrel(options =>
+        public static IHost BuildHost(IPEndPoint CovenantEndpoint, string CovenantUri) =>
+            new HostBuilder()
+            .ConfigureWebHost(weboptions =>
+            {
+                weboptions.UseKestrel(options =>
                 {
                     options.Listen(CovenantEndpoint, listenOptions =>
                     {
@@ -172,12 +209,12 @@ namespace Covenant
                             }
                             catch (CryptographicException)
                             {
-                                Console.Error.WriteLine("Error importing Covenant certificate. Wrong password? Must use initial user/password.");
+                                Console.Error.WriteLine("Error importing Covenant certificate.");
                             }
                             httpsOptions.SslProtocols = SslProtocols.Tls12;
-                            Console.WriteLine("Using Covenant certificate with hash: " + httpsOptions.ServerCertificate.GetCertHashString());
                         });
                     });
+                    // options.Limits.MaxRequestBodySize = int.MaxValue;
                 })
                 .UseContentRoot(Directory.GetCurrentDirectory())
                 .ConfigureAppConfiguration((hostingContext, config) =>
@@ -203,9 +240,20 @@ namespace Covenant
                 })
                 .UseStartup<Startup>()
                 .UseSetting("CovenantUri", CovenantUri)
-                .UseSetting("CovenantUsername", CovenantUsername)
-                .UseSetting("CovenantPassword", CovenantPassword)
-                .Build();
+                .UseSetting(WebHostDefaults.DetailedErrorsKey, "true");
+            })
+            .Build();
+
+        private static bool IsElevated()
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                var identity = WindowsIdentity.GetCurrent();
+                var principal = new WindowsPrincipal(identity);
+                return principal.IsInRole("Administrators");
+            }
+            return Environment.UserName.Equals("root", StringComparison.CurrentCultureIgnoreCase);
+        }
 
         private static string GetPassword()
         {

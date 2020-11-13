@@ -6,7 +6,10 @@
 
 namespace Covenant.API.Models
 {
+    using Microsoft.Rest;
     using Newtonsoft.Json;
+    using System.Collections;
+    using System.Collections.Generic;
     using System.Linq;
 
     public partial class GruntTasking
@@ -23,26 +26,24 @@ namespace Covenant.API.Models
         /// Initializes a new instance of the GruntTasking class.
         /// </summary>
         /// <param name="type">Possible values include: 'Assembly', 'SetDelay',
-        /// 'SetJitter', 'SetConnectAttempts', 'Kill', 'Connect', 'Disconnect',
-        /// 'Jobs'</param>
+        /// 'SetJitter', 'SetConnectAttempts', 'SetKillDate', 'Exit',
+        /// 'Connect', 'Disconnect', 'Tasks', 'TaskKill'</param>
         /// <param name="status">Possible values include: 'Uninitialized',
-        /// 'Tasked', 'Progressed', 'Completed'</param>
-        public GruntTasking(int? id = default(int?), string name = default(string), int? gruntId = default(int?), int? taskId = default(int?), GruntTaskingType? type = default(GruntTaskingType?), string taskingMessage = default(string), bool? tokenTask = default(bool?), string taskingCommand = default(string), string taskingUser = default(string), GruntTaskingStatus? status = default(GruntTaskingStatus?), string gruntTaskOutput = default(string), System.DateTime? taskingTime = default(System.DateTime?), System.DateTime? completionTime = default(System.DateTime?), GruntTaskingMessage gruntTaskingMessage = default(GruntTaskingMessage))
+        /// 'Tasked', 'Progressed', 'Completed', 'Aborted'</param>
+        public GruntTasking(string name, int gruntId, int gruntTaskId, int? id = default(int?), Grunt grunt = default(Grunt), GruntTask gruntTask = default(GruntTask), GruntTaskingType? type = default(GruntTaskingType?), IList<string> parameters = default(IList<string>), GruntTaskingStatus? status = default(GruntTaskingStatus?), System.DateTime? taskingTime = default(System.DateTime?), System.DateTime? completionTime = default(System.DateTime?), int? gruntCommandId = default(int?))
         {
             Id = id;
             Name = name;
             GruntId = gruntId;
-            TaskId = taskId;
+            Grunt = grunt;
+            GruntTaskId = gruntTaskId;
+            GruntTask = gruntTask;
             Type = type;
-            TaskingMessage = taskingMessage;
-            TokenTask = tokenTask;
-            TaskingCommand = taskingCommand;
-            TaskingUser = taskingUser;
+            Parameters = parameters;
             Status = status;
-            GruntTaskOutput = gruntTaskOutput;
             TaskingTime = taskingTime;
             CompletionTime = completionTime;
-            GruntTaskingMessage = gruntTaskingMessage;
+            GruntCommandId = gruntCommandId;
             CustomInit();
         }
 
@@ -64,52 +65,42 @@ namespace Covenant.API.Models
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "gruntId")]
-        public int? GruntId { get; set; }
+        public int GruntId { get; set; }
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "taskId")]
-        public int? TaskId { get; set; }
+        [JsonProperty(PropertyName = "grunt")]
+        public Grunt Grunt { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "gruntTaskId")]
+        public int GruntTaskId { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "gruntTask")]
+        public GruntTask GruntTask { get; set; }
 
         /// <summary>
         /// Gets or sets possible values include: 'Assembly', 'SetDelay',
-        /// 'SetJitter', 'SetConnectAttempts', 'Kill', 'Connect', 'Disconnect',
-        /// 'Jobs'
+        /// 'SetJitter', 'SetConnectAttempts', 'SetKillDate', 'Exit',
+        /// 'Connect', 'Disconnect', 'Tasks', 'TaskKill'
         /// </summary>
         [JsonProperty(PropertyName = "type")]
         public GruntTaskingType? Type { get; set; }
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "taskingMessage")]
-        public string TaskingMessage { get; set; }
-
-        /// <summary>
-        /// </summary>
-        [JsonProperty(PropertyName = "tokenTask")]
-        public bool? TokenTask { get; set; }
-
-        /// <summary>
-        /// </summary>
-        [JsonProperty(PropertyName = "taskingCommand")]
-        public string TaskingCommand { get; set; }
-
-        /// <summary>
-        /// </summary>
-        [JsonProperty(PropertyName = "taskingUser")]
-        public string TaskingUser { get; set; }
+        [JsonProperty(PropertyName = "parameters")]
+        public IList<string> Parameters { get; set; }
 
         /// <summary>
         /// Gets or sets possible values include: 'Uninitialized', 'Tasked',
-        /// 'Progressed', 'Completed'
+        /// 'Progressed', 'Completed', 'Aborted'
         /// </summary>
         [JsonProperty(PropertyName = "status")]
         public GruntTaskingStatus? Status { get; set; }
-
-        /// <summary>
-        /// </summary>
-        [JsonProperty(PropertyName = "gruntTaskOutput")]
-        public string GruntTaskOutput { get; set; }
 
         /// <summary>
         /// </summary>
@@ -123,8 +114,29 @@ namespace Covenant.API.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "gruntTaskingMessage")]
-        public GruntTaskingMessage GruntTaskingMessage { get; private set; }
+        [JsonProperty(PropertyName = "gruntCommandId")]
+        public int? GruntCommandId { get; set; }
 
+        /// <summary>
+        /// Validate the object.
+        /// </summary>
+        /// <exception cref="ValidationException">
+        /// Thrown if validation fails
+        /// </exception>
+        public virtual void Validate()
+        {
+            if (Name == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "Name");
+            }
+            if (Grunt != null)
+            {
+                Grunt.Validate();
+            }
+            if (GruntTask != null)
+            {
+                GruntTask.Validate();
+            }
+        }
     }
 }

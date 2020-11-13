@@ -6,6 +6,7 @@
 
 namespace Covenant.API.Models
 {
+    using Microsoft.Rest;
     using Newtonsoft.Json;
     using System.Collections;
     using System.Collections.Generic;
@@ -24,33 +25,42 @@ namespace Covenant.API.Models
         /// <summary>
         /// Initializes a new instance of the Grunt class.
         /// </summary>
-        /// <param name="commType">Possible values include: 'HTTP',
-        /// 'SMB'</param>
-        /// <param name="dotNetFrameworkVersion">Possible values include:
-        /// 'Net40', 'Net35', 'NetCore21'</param>
+        /// <param name="dotNetVersion">Possible values include: 'Net35',
+        /// 'Net40', 'NetCore31'</param>
+        /// <param name="runtimeIdentifier">Possible values include: 'win_x64',
+        /// 'win_x86', 'win_arm', 'win_arm64', 'win7_x64', 'win7_x86',
+        /// 'win81_x64', 'win81_x86', 'win81_arm', 'win10_x64', 'win10_x86',
+        /// 'win10_arm', 'win10_arm64', 'linux_x64', 'linux_musl_x64',
+        /// 'linux_arm', 'linux_arm64', 'rhel_x64', 'rhel_6_x64', 'tizen',
+        /// 'tizen_4_0_0', 'tizen_5_0_0', 'osx_x64', 'osx_10_10_x64',
+        /// 'osx_10_11_x64', 'osx_10_12_x64', 'osx_10_13_x64', 'osx_10_14_x64',
+        /// 'osx_10_15_x64'</param>
         /// <param name="status">Possible values include: 'Uninitialized',
-        /// 'Stage0', 'Stage1', 'Stage2', 'Active', 'Lost', 'Killed',
-        /// 'Disconnected'</param>
+        /// 'Stage0', 'Stage1', 'Stage2', 'Active', 'Lost', 'Exited',
+        /// 'Disconnected', 'Hidden'</param>
         /// <param name="integrity">Possible values include: 'Untrusted',
         /// 'Low', 'Medium', 'High', 'System'</param>
-        public Grunt(int? id = default(int?), string name = default(string), string originalServerGuid = default(string), string guid = default(string), IList<string> children = default(IList<string>), CommunicationType? commType = default(CommunicationType?), bool? validateCert = default(bool?), bool? useCertPinning = default(bool?), string smbPipeName = default(string), int? listenerId = default(int?), string covenantIPAddress = default(string), int? delay = default(int?), int? jitterPercent = default(int?), int? connectAttempts = default(int?), System.DateTime? killDate = default(System.DateTime?), DotNetVersion? dotNetFrameworkVersion = default(DotNetVersion?), GruntStatus? status = default(GruntStatus?), IntegrityLevel? integrity = default(IntegrityLevel?), string process = default(string), string userDomainName = default(string), string userName = default(string), string ipAddress = default(string), string hostname = default(string), string operatingSystem = default(string), string gruntSharedSecretPassword = default(string), string gruntRSAPublicKey = default(string), string gruntNegotiatedSessionKey = default(string), string gruntChallenge = default(string), string cookieAuthKey = default(string), System.DateTime? activationTime = default(System.DateTime?), System.DateTime? lastCheckIn = default(System.DateTime?))
+        public Grunt(string name, string originalServerGuid, int implantTemplateId, bool validateCert, bool useCertPinning, string smbPipeName, int delay, int jitterPercent, int connectAttempts, System.DateTime killDate, DotNetVersion dotNetVersion, RuntimeIdentifier runtimeIdentifier, GruntStatus status, IntegrityLevel integrity, int? id = default(int?), string guid = default(string), IList<string> children = default(IList<string>), ImplantTemplate implantTemplate = default(ImplantTemplate), int? listenerId = default(int?), Listener listener = default(Listener), string note = default(string), string process = default(string), string userDomainName = default(string), string userName = default(string), string ipAddress = default(string), string hostname = default(string), string operatingSystem = default(string), string gruntSharedSecretPassword = default(string), string gruntRSAPublicKey = default(string), string gruntNegotiatedSessionKey = default(string), string gruntChallenge = default(string), System.DateTime? activationTime = default(System.DateTime?), System.DateTime? lastCheckIn = default(System.DateTime?), string powerShellImport = default(string), IList<GruntCommand> gruntCommands = default(IList<GruntCommand>))
         {
             Id = id;
             Name = name;
             OriginalServerGuid = originalServerGuid;
             Guid = guid;
             Children = children;
-            CommType = commType;
+            ImplantTemplateId = implantTemplateId;
+            ImplantTemplate = implantTemplate;
             ValidateCert = validateCert;
             UseCertPinning = useCertPinning;
             SmbPipeName = smbPipeName;
             ListenerId = listenerId;
-            CovenantIPAddress = covenantIPAddress;
+            Listener = listener;
+            Note = note;
             Delay = delay;
             JitterPercent = jitterPercent;
             ConnectAttempts = connectAttempts;
             KillDate = killDate;
-            DotNetFrameworkVersion = dotNetFrameworkVersion;
+            DotNetVersion = dotNetVersion;
+            RuntimeIdentifier = runtimeIdentifier;
             Status = status;
             Integrity = integrity;
             Process = process;
@@ -63,9 +73,10 @@ namespace Covenant.API.Models
             GruntRSAPublicKey = gruntRSAPublicKey;
             GruntNegotiatedSessionKey = gruntNegotiatedSessionKey;
             GruntChallenge = gruntChallenge;
-            CookieAuthKey = cookieAuthKey;
             ActivationTime = activationTime;
             LastCheckIn = lastCheckIn;
+            PowerShellImport = powerShellImport;
+            GruntCommands = gruntCommands;
             CustomInit();
         }
 
@@ -100,20 +111,24 @@ namespace Covenant.API.Models
         public IList<string> Children { get; set; }
 
         /// <summary>
-        /// Gets or sets possible values include: 'HTTP', 'SMB'
         /// </summary>
-        [JsonProperty(PropertyName = "commType")]
-        public CommunicationType? CommType { get; set; }
+        [JsonProperty(PropertyName = "implantTemplateId")]
+        public int ImplantTemplateId { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "implantTemplate")]
+        public ImplantTemplate ImplantTemplate { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "validateCert")]
-        public bool? ValidateCert { get; set; }
+        public bool ValidateCert { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "useCertPinning")]
-        public bool? UseCertPinning { get; set; }
+        public bool UseCertPinning { get; set; }
 
         /// <summary>
         /// </summary>
@@ -127,48 +142,66 @@ namespace Covenant.API.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "covenantIPAddress")]
-        public string CovenantIPAddress { get; set; }
+        [JsonProperty(PropertyName = "listener")]
+        public Listener Listener { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "note")]
+        public string Note { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "delay")]
-        public int? Delay { get; set; }
+        public int Delay { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "jitterPercent")]
-        public int? JitterPercent { get; set; }
+        public int JitterPercent { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "connectAttempts")]
-        public int? ConnectAttempts { get; set; }
+        public int ConnectAttempts { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "killDate")]
-        public System.DateTime? KillDate { get; set; }
+        public System.DateTime KillDate { get; set; }
 
         /// <summary>
-        /// Gets or sets possible values include: 'Net40', 'Net35', 'NetCore21'
+        /// Gets or sets possible values include: 'Net35', 'Net40', 'NetCore31'
         /// </summary>
-        [JsonProperty(PropertyName = "dotNetFrameworkVersion")]
-        public DotNetVersion? DotNetFrameworkVersion { get; set; }
+        [JsonProperty(PropertyName = "dotNetVersion")]
+        public DotNetVersion DotNetVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets possible values include: 'win_x64', 'win_x86',
+        /// 'win_arm', 'win_arm64', 'win7_x64', 'win7_x86', 'win81_x64',
+        /// 'win81_x86', 'win81_arm', 'win10_x64', 'win10_x86', 'win10_arm',
+        /// 'win10_arm64', 'linux_x64', 'linux_musl_x64', 'linux_arm',
+        /// 'linux_arm64', 'rhel_x64', 'rhel_6_x64', 'tizen', 'tizen_4_0_0',
+        /// 'tizen_5_0_0', 'osx_x64', 'osx_10_10_x64', 'osx_10_11_x64',
+        /// 'osx_10_12_x64', 'osx_10_13_x64', 'osx_10_14_x64', 'osx_10_15_x64'
+        /// </summary>
+        [JsonProperty(PropertyName = "runtimeIdentifier")]
+        public RuntimeIdentifier RuntimeIdentifier { get; set; }
 
         /// <summary>
         /// Gets or sets possible values include: 'Uninitialized', 'Stage0',
-        /// 'Stage1', 'Stage2', 'Active', 'Lost', 'Killed', 'Disconnected'
+        /// 'Stage1', 'Stage2', 'Active', 'Lost', 'Exited', 'Disconnected',
+        /// 'Hidden'
         /// </summary>
         [JsonProperty(PropertyName = "status")]
-        public GruntStatus? Status { get; set; }
+        public GruntStatus Status { get; set; }
 
         /// <summary>
         /// Gets or sets possible values include: 'Untrusted', 'Low', 'Medium',
         /// 'High', 'System'
         /// </summary>
         [JsonProperty(PropertyName = "integrity")]
-        public IntegrityLevel? Integrity { get; set; }
+        public IntegrityLevel Integrity { get; set; }
 
         /// <summary>
         /// </summary>
@@ -222,11 +255,6 @@ namespace Covenant.API.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "cookieAuthKey")]
-        public string CookieAuthKey { get; set; }
-
-        /// <summary>
-        /// </summary>
         [JsonProperty(PropertyName = "activationTime")]
         public System.DateTime? ActivationTime { get; set; }
 
@@ -235,5 +263,74 @@ namespace Covenant.API.Models
         [JsonProperty(PropertyName = "lastCheckIn")]
         public System.DateTime? LastCheckIn { get; set; }
 
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "powerShellImport")]
+        public string PowerShellImport { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "gruntCommands")]
+        public IList<GruntCommand> GruntCommands { get; set; }
+
+        /// <summary>
+        /// Validate the object.
+        /// </summary>
+        /// <exception cref="ValidationException">
+        /// Thrown if validation fails
+        /// </exception>
+        public virtual void Validate()
+        {
+            if (Name == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "Name");
+            }
+            if (OriginalServerGuid == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "OriginalServerGuid");
+            }
+            if (SmbPipeName == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "SmbPipeName");
+            }
+            if (Listener != null)
+            {
+                Listener.Validate();
+            }
+            if (Delay > 2147483647)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMaximum, "Delay", 2147483647);
+            }
+            if (Delay < 0)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMinimum, "Delay", 0);
+            }
+            if (JitterPercent > 100)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMaximum, "JitterPercent", 100);
+            }
+            if (JitterPercent < 0)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMinimum, "JitterPercent", 0);
+            }
+            if (ConnectAttempts > 2147483647)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMaximum, "ConnectAttempts", 2147483647);
+            }
+            if (ConnectAttempts < 0)
+            {
+                throw new ValidationException(ValidationRules.InclusiveMinimum, "ConnectAttempts", 0);
+            }
+            if (GruntCommands != null)
+            {
+                foreach (var element in GruntCommands)
+                {
+                    if (element != null)
+                    {
+                        element.Validate();
+                    }
+                }
+            }
+        }
     }
 }

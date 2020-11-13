@@ -22,22 +22,33 @@ namespace Covenant.API.Models
         /// <summary>
         /// Initializes a new instance of the BinaryLauncher class.
         /// </summary>
-        /// <param name="dotNetFrameworkVersion">Possible values include:
-        /// 'Net40', 'Net35', 'NetCore21'</param>
         /// <param name="type">Possible values include: 'Wmic', 'Regsvr32',
         /// 'Mshta', 'Cscript', 'Wscript', 'PowerShell', 'Binary', 'MSBuild',
-        /// 'InstallUtil'</param>
-        /// <param name="commType">Possible values include: 'HTTP',
-        /// 'SMB'</param>
-        public BinaryLauncher(int? id = default(int?), int? listenerId = default(int?), DotNetVersion? dotNetFrameworkVersion = default(DotNetVersion?), LauncherType? type = default(LauncherType?), string name = default(string), string description = default(string), CommunicationType? commType = default(CommunicationType?), bool? validateCert = default(bool?), bool? useCertPinning = default(bool?), string smbPipeName = default(string), int? delay = default(int?), int? jitterPercent = default(int?), int? connectAttempts = default(int?), System.DateTime? killDate = default(System.DateTime?), string launcherString = default(string), string stagerCode = default(string), string base64ILByteString = default(string))
+        /// 'InstallUtil', 'ShellCode'</param>
+        /// <param name="dotNetVersion">Possible values include: 'Net35',
+        /// 'Net40', 'NetCore31'</param>
+        /// <param name="runtimeIdentifier">Possible values include: 'win_x64',
+        /// 'win_x86', 'win_arm', 'win_arm64', 'win7_x64', 'win7_x86',
+        /// 'win81_x64', 'win81_x86', 'win81_arm', 'win10_x64', 'win10_x86',
+        /// 'win10_arm', 'win10_arm64', 'linux_x64', 'linux_musl_x64',
+        /// 'linux_arm', 'linux_arm64', 'rhel_x64', 'rhel_6_x64', 'tizen',
+        /// 'tizen_4_0_0', 'tizen_5_0_0', 'osx_x64', 'osx_10_10_x64',
+        /// 'osx_10_11_x64', 'osx_10_12_x64', 'osx_10_13_x64', 'osx_10_14_x64',
+        /// 'osx_10_15_x64'</param>
+        /// <param name="outputKind">Possible values include:
+        /// 'ConsoleApplication', 'WindowsApplication',
+        /// 'DynamicallyLinkedLibrary', 'NetModule', 'WindowsRuntimeMetadata',
+        /// 'WindowsRuntimeApplication'</param>
+        public BinaryLauncher(int? id = default(int?), int? listenerId = default(int?), int? implantTemplateId = default(int?), string name = default(string), string description = default(string), LauncherType? type = default(LauncherType?), DotNetVersion? dotNetVersion = default(DotNetVersion?), RuntimeIdentifier? runtimeIdentifier = default(RuntimeIdentifier?), bool? validateCert = default(bool?), bool? useCertPinning = default(bool?), string smbPipeName = default(string), int? delay = default(int?), int? jitterPercent = default(int?), int? connectAttempts = default(int?), System.DateTime? killDate = default(System.DateTime?), string launcherString = default(string), string stagerCode = default(string), OutputKind? outputKind = default(OutputKind?), bool? compressStager = default(bool?))
         {
             Id = id;
             ListenerId = listenerId;
-            DotNetFrameworkVersion = dotNetFrameworkVersion;
-            Type = type;
+            ImplantTemplateId = implantTemplateId;
             Name = name;
             Description = description;
-            CommType = commType;
+            Type = type;
+            DotNetVersion = dotNetVersion;
+            RuntimeIdentifier = runtimeIdentifier;
             ValidateCert = validateCert;
             UseCertPinning = useCertPinning;
             SmbPipeName = smbPipeName;
@@ -47,7 +58,8 @@ namespace Covenant.API.Models
             KillDate = killDate;
             LauncherString = launcherString;
             StagerCode = stagerCode;
-            Base64ILByteString = base64ILByteString;
+            OutputKind = outputKind;
+            CompressStager = compressStager;
             CustomInit();
         }
 
@@ -67,18 +79,9 @@ namespace Covenant.API.Models
         public int? ListenerId { get; set; }
 
         /// <summary>
-        /// Gets or sets possible values include: 'Net40', 'Net35', 'NetCore21'
         /// </summary>
-        [JsonProperty(PropertyName = "dotNetFrameworkVersion")]
-        public DotNetVersion? DotNetFrameworkVersion { get; set; }
-
-        /// <summary>
-        /// Gets or sets possible values include: 'Wmic', 'Regsvr32', 'Mshta',
-        /// 'Cscript', 'Wscript', 'PowerShell', 'Binary', 'MSBuild',
-        /// 'InstallUtil'
-        /// </summary>
-        [JsonProperty(PropertyName = "type")]
-        public LauncherType? Type { get; set; }
+        [JsonProperty(PropertyName = "implantTemplateId")]
+        public int? ImplantTemplateId { get; set; }
 
         /// <summary>
         /// </summary>
@@ -91,10 +94,30 @@ namespace Covenant.API.Models
         public string Description { get; set; }
 
         /// <summary>
-        /// Gets or sets possible values include: 'HTTP', 'SMB'
+        /// Gets or sets possible values include: 'Wmic', 'Regsvr32', 'Mshta',
+        /// 'Cscript', 'Wscript', 'PowerShell', 'Binary', 'MSBuild',
+        /// 'InstallUtil', 'ShellCode'
         /// </summary>
-        [JsonProperty(PropertyName = "commType")]
-        public CommunicationType? CommType { get; set; }
+        [JsonProperty(PropertyName = "type")]
+        public LauncherType? Type { get; set; }
+
+        /// <summary>
+        /// Gets or sets possible values include: 'Net35', 'Net40', 'NetCore31'
+        /// </summary>
+        [JsonProperty(PropertyName = "dotNetVersion")]
+        public DotNetVersion? DotNetVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets possible values include: 'win_x64', 'win_x86',
+        /// 'win_arm', 'win_arm64', 'win7_x64', 'win7_x86', 'win81_x64',
+        /// 'win81_x86', 'win81_arm', 'win10_x64', 'win10_x86', 'win10_arm',
+        /// 'win10_arm64', 'linux_x64', 'linux_musl_x64', 'linux_arm',
+        /// 'linux_arm64', 'rhel_x64', 'rhel_6_x64', 'tizen', 'tizen_4_0_0',
+        /// 'tizen_5_0_0', 'osx_x64', 'osx_10_10_x64', 'osx_10_11_x64',
+        /// 'osx_10_12_x64', 'osx_10_13_x64', 'osx_10_14_x64', 'osx_10_15_x64'
+        /// </summary>
+        [JsonProperty(PropertyName = "runtimeIdentifier")]
+        public RuntimeIdentifier? RuntimeIdentifier { get; set; }
 
         /// <summary>
         /// </summary>
@@ -142,9 +165,17 @@ namespace Covenant.API.Models
         public string StagerCode { get; set; }
 
         /// <summary>
+        /// Gets or sets possible values include: 'ConsoleApplication',
+        /// 'WindowsApplication', 'DynamicallyLinkedLibrary', 'NetModule',
+        /// 'WindowsRuntimeMetadata', 'WindowsRuntimeApplication'
         /// </summary>
-        [JsonProperty(PropertyName = "base64ILByteString")]
-        public string Base64ILByteString { get; set; }
+        [JsonProperty(PropertyName = "outputKind")]
+        public OutputKind? OutputKind { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "compressStager")]
+        public bool? CompressStager { get; set; }
 
     }
 }

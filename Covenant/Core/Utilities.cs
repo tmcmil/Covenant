@@ -6,6 +6,7 @@ using System;
 using System.IO;
 using System.Net;
 using System.Text;
+using System.Threading.Tasks;
 using System.IO.Compression;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
@@ -81,6 +82,11 @@ namespace Covenant.Core
             }
         }
 
+        public static string CreateShortGuid()
+        {
+            return Guid.NewGuid().ToString().Replace("-", "").Substring(0, 10);
+        }
+
         public static Guid CreateSecureGuid()
         {
             using (var provider = RandomNumberGenerator.Create())
@@ -120,6 +126,51 @@ namespace Covenant.Core
         public static bool IsIPAddress(string ComputerName)
         {
             return IPAddress.TryParse(ComputerName, out IPAddress address);
+        }
+
+        public static string GetSanitizedFilename(string filename)
+        {
+            foreach (char invalid in Path.GetInvalidFileNameChars())
+            {
+                filename = filename.Replace(invalid, '_');
+            }
+            return filename;
+        }
+
+        public static string GetExtensionForLanguage(Models.Grunts.ImplantLanguage language)
+        {
+            switch (language)
+            {
+                case Models.Grunts.ImplantLanguage.CSharp:
+                    return ".cs";
+                default:
+                    return ".cs";
+            }
+        }
+    }
+
+    public static class TaskExtensions
+    {
+        public static T WaitResult<T>(this Task<T> Task)
+        {
+            return TaskExtensions.WaitTask(Task).Result;
+        }
+
+        public static Task<T> WaitTask<T>(this Task<T> Task)
+        {
+            Task.Wait();
+            return Task;
+        }
+
+        public static T WaitResult<T>(this ValueTask<T> Task)
+        {
+            return TaskExtensions.WaitTask(Task).Result;
+        }
+
+        public static ValueTask<T> WaitTask<T>(this ValueTask<T> Task)
+        {
+            Task.AsTask().Wait();
+            return Task;
         }
     }
 
@@ -178,6 +229,23 @@ namespace Covenant.Core
                 }
                 return true;
             }
+        }
+
+        public static string TrimOnceSymmetric(this string str, char c)
+        {
+            string ch = c.ToString();
+            if (str.StartsWith(ch, StringComparison.Ordinal) && str.EndsWith(ch, StringComparison.Ordinal))
+            {
+                if (str.Length > 1)
+                {
+                    str = str.Substring(1, str.Length - 1);
+                }
+                if (str.Length > 1)
+                {
+                    str = str.Substring(0, str.Length - 1);
+                }
+            }
+            return str;
         }
     }
 }

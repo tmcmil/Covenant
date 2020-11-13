@@ -6,6 +6,7 @@
 
 namespace Covenant.API.Models
 {
+    using Microsoft.Rest;
     using Newtonsoft.Json;
     using System.Collections;
     using System.Collections.Generic;
@@ -24,18 +25,29 @@ namespace Covenant.API.Models
         /// <summary>
         /// Initializes a new instance of the GruntTask class.
         /// </summary>
-        public GruntTask(int? id = default(int?), string name = default(string), string description = default(string), string help = default(string), bool? tokenTask = default(bool?), string code = default(string), IList<string> referenceAssemblies = default(IList<string>), IList<string> referenceSourceLibraries = default(IList<string>), IList<string> embeddedResources = default(IList<string>), bool? unsafeCompile = default(bool?), IList<GruntTaskOption> options = default(IList<GruntTaskOption>))
+        /// <param name="language">Possible values include: 'CSharp'</param>
+        /// <param name="taskingType">Possible values include: 'Assembly',
+        /// 'SetDelay', 'SetJitter', 'SetConnectAttempts', 'SetKillDate',
+        /// 'Exit', 'Connect', 'Disconnect', 'Tasks', 'TaskKill'</param>
+        public GruntTask(string name, int? id = default(int?), int? authorId = default(int?), GruntTaskAuthor author = default(GruntTaskAuthor), IList<string> aliases = default(IList<string>), string description = default(string), string help = default(string), ImplantLanguage? language = default(ImplantLanguage?), IList<DotNetVersion?> compatibleDotNetVersions = default(IList<DotNetVersion?>), string code = default(string), bool? compiled = default(bool?), GruntTaskingType? taskingType = default(GruntTaskingType?), IList<ReferenceSourceLibrary> referenceSourceLibraries = default(IList<ReferenceSourceLibrary>), IList<ReferenceAssembly> referenceAssemblies = default(IList<ReferenceAssembly>), IList<EmbeddedResource> embeddedResources = default(IList<EmbeddedResource>), bool? unsafeCompile = default(bool?), bool? tokenTask = default(bool?), IList<GruntTaskOption> options = default(IList<GruntTaskOption>))
         {
             Id = id;
+            AuthorId = authorId;
+            Author = author;
             Name = name;
+            Aliases = aliases;
             Description = description;
             Help = help;
-            TokenTask = tokenTask;
+            Language = language;
+            CompatibleDotNetVersions = compatibleDotNetVersions;
             Code = code;
-            ReferenceAssemblies = referenceAssemblies;
+            Compiled = compiled;
+            TaskingType = taskingType;
             ReferenceSourceLibraries = referenceSourceLibraries;
+            ReferenceAssemblies = referenceAssemblies;
             EmbeddedResources = embeddedResources;
             UnsafeCompile = unsafeCompile;
+            TokenTask = tokenTask;
             Options = options;
             CustomInit();
         }
@@ -52,8 +64,23 @@ namespace Covenant.API.Models
 
         /// <summary>
         /// </summary>
+        [JsonProperty(PropertyName = "authorId")]
+        public int? AuthorId { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "author")]
+        public GruntTaskAuthor Author { get; set; }
+
+        /// <summary>
+        /// </summary>
         [JsonProperty(PropertyName = "name")]
         public string Name { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "aliases")]
+        public IList<string> Aliases { get; set; }
 
         /// <summary>
         /// </summary>
@@ -66,9 +93,15 @@ namespace Covenant.API.Models
         public string Help { get; set; }
 
         /// <summary>
+        /// Gets or sets possible values include: 'CSharp'
         /// </summary>
-        [JsonProperty(PropertyName = "tokenTask")]
-        public bool? TokenTask { get; set; }
+        [JsonProperty(PropertyName = "language")]
+        public ImplantLanguage? Language { get; set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "compatibleDotNetVersions")]
+        public IList<DotNetVersion?> CompatibleDotNetVersions { get; set; }
 
         /// <summary>
         /// </summary>
@@ -77,18 +110,31 @@ namespace Covenant.API.Models
 
         /// <summary>
         /// </summary>
-        [JsonProperty(PropertyName = "referenceAssemblies")]
-        public IList<string> ReferenceAssemblies { get; set; }
+        [JsonProperty(PropertyName = "compiled")]
+        public bool? Compiled { get; set; }
+
+        /// <summary>
+        /// Gets or sets possible values include: 'Assembly', 'SetDelay',
+        /// 'SetJitter', 'SetConnectAttempts', 'SetKillDate', 'Exit',
+        /// 'Connect', 'Disconnect', 'Tasks', 'TaskKill'
+        /// </summary>
+        [JsonProperty(PropertyName = "taskingType")]
+        public GruntTaskingType? TaskingType { get; set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "referenceSourceLibraries")]
-        public IList<string> ReferenceSourceLibraries { get; set; }
+        public IList<ReferenceSourceLibrary> ReferenceSourceLibraries { get; private set; }
+
+        /// <summary>
+        /// </summary>
+        [JsonProperty(PropertyName = "referenceAssemblies")]
+        public IList<ReferenceAssembly> ReferenceAssemblies { get; private set; }
 
         /// <summary>
         /// </summary>
         [JsonProperty(PropertyName = "embeddedResources")]
-        public IList<string> EmbeddedResources { get; set; }
+        public IList<EmbeddedResource> EmbeddedResources { get; private set; }
 
         /// <summary>
         /// </summary>
@@ -97,8 +143,26 @@ namespace Covenant.API.Models
 
         /// <summary>
         /// </summary>
+        [JsonProperty(PropertyName = "tokenTask")]
+        public bool? TokenTask { get; set; }
+
+        /// <summary>
+        /// </summary>
         [JsonProperty(PropertyName = "options")]
         public IList<GruntTaskOption> Options { get; set; }
 
+        /// <summary>
+        /// Validate the object.
+        /// </summary>
+        /// <exception cref="ValidationException">
+        /// Thrown if validation fails
+        /// </exception>
+        public virtual void Validate()
+        {
+            if (Name == null)
+            {
+                throw new ValidationException(ValidationRules.CannotBeNull, "Name");
+            }
+        }
     }
 }

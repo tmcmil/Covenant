@@ -25,14 +25,18 @@ namespace Covenant.API.Models
         SetJitter,
         [EnumMember(Value = "SetConnectAttempts")]
         SetConnectAttempts,
-        [EnumMember(Value = "Kill")]
-        Kill,
+        [EnumMember(Value = "SetKillDate")]
+        SetKillDate,
+        [EnumMember(Value = "Exit")]
+        Exit,
         [EnumMember(Value = "Connect")]
         Connect,
         [EnumMember(Value = "Disconnect")]
         Disconnect,
-        [EnumMember(Value = "Jobs")]
-        Jobs
+        [EnumMember(Value = "Tasks")]
+        Tasks,
+        [EnumMember(Value = "TaskKill")]
+        TaskKill
     }
     internal static class GruntTaskingTypeEnumExtension
     {
@@ -53,14 +57,18 @@ namespace Covenant.API.Models
                     return "SetJitter";
                 case GruntTaskingType.SetConnectAttempts:
                     return "SetConnectAttempts";
-                case GruntTaskingType.Kill:
-                    return "Kill";
+                case GruntTaskingType.SetKillDate:
+                    return "SetKillDate";
+                case GruntTaskingType.Exit:
+                    return "Exit";
                 case GruntTaskingType.Connect:
                     return "Connect";
                 case GruntTaskingType.Disconnect:
                     return "Disconnect";
-                case GruntTaskingType.Jobs:
-                    return "Jobs";
+                case GruntTaskingType.Tasks:
+                    return "Tasks";
+                case GruntTaskingType.TaskKill:
+                    return "TaskKill";
             }
             return null;
         }
@@ -77,14 +85,18 @@ namespace Covenant.API.Models
                     return GruntTaskingType.SetJitter;
                 case "SetConnectAttempts":
                     return GruntTaskingType.SetConnectAttempts;
-                case "Kill":
-                    return GruntTaskingType.Kill;
+                case "SetKillDate":
+                    return GruntTaskingType.SetKillDate;
+                case "Exit":
+                    return GruntTaskingType.Exit;
                 case "Connect":
                     return GruntTaskingType.Connect;
                 case "Disconnect":
                     return GruntTaskingType.Disconnect;
-                case "Jobs":
-                    return GruntTaskingType.Jobs;
+                case "Tasks":
+                    return GruntTaskingType.Tasks;
+                case "TaskKill":
+                    return GruntTaskingType.TaskKill;
             }
             return null;
         }

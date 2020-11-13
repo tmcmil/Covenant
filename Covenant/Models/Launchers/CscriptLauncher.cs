@@ -16,12 +16,13 @@ namespace Covenant.Models.Launchers
         {
             this.Name = "Cscript";
             this.Type = LauncherType.Cscript;
-            this.Description = "Uses cscript.exe to launch a Grunt using a COM activated Delegate and ActiveXObjects.";
+            this.Description = "Uses cscript.exe to launch a Grunt using a COM activated Delegate and ActiveXObjects (ala DotNetToJScript). Please note that DotNetToJScript-based launchers may not work on Windows 10 and Windows Server 2016.";
             this.ScriptType = ScriptletType.Plain;
             this.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+            this.CompressStager = false;
         }
 
-        protected override string GetLauncher(String code)
+        protected override string GetLauncher()
         {
             string launcher = "cscript" + " " + "file.js";
             this.LauncherString = launcher;
